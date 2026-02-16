@@ -1,0 +1,10 @@
+ProjectUnity/Client/Library/
+ProjectUnity/Client/Logs/
+ProjectUnity/Client/Temp/
+ProjectUnity/Client/.vsconfig
+ProjectUnity/Client/Assembly-CSharp.csproj
+ProjectUnity/Client/Assembly-CSharp-Editor.csproj
+ProjectUnity/Client/Assembly-CSharp-Editor-firstpass.csproj
+ProjectUnity/Client/Assembly-CSharp-firstpass.csproj
+ProjectUnity/Client/Client.sln
+ProjectUnity/Client/.vs/
