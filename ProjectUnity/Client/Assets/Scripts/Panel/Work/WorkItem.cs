@@ -17,7 +17,7 @@ public class WorkItem : MonoBehaviour
 	}
 	public void OnClick() {
 		if (onClick == null) { return; }
-		AudioManager.Inst.Play("BGM/ç‚¹å‡»æŒ‰é’®");
+		AudioManager.Inst.Play("BGM/µã»÷°´Å¥");
 		onClick.Invoke(work);
 	}
 }
