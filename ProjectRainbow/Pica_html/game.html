@@ -3,6 +3,7 @@
 	<head>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="icon" type="image/png" href="favicon.png">
 		<title>无人红色皮卡的安保之旅</title>
 		<!-- 引入tailwindcss -->
 		<script src="https://cdn.tailwindcss.com"></script>
@@ -44,130 +45,344 @@
 			body {
 				background: #171717;
 			}
-			
-			/* 事件触发字容器样式 */
-			#event-trigger-container {
-				will-change: transform;
+			/* 事件文本框滚动条：与画面风格一致（深底 + 红色滑块） */
+			.text-area-scroll {
+				scrollbar-width: thin;
+				scrollbar-color: #c41e3a #1f2937;
+			}
+			.text-area-scroll::-webkit-scrollbar {
+				width: 10px;
+			}
+			.text-area-scroll::-webkit-scrollbar-track {
+				background: #1f2937;
+				border-radius: 0 10px 10px 0;
+			}
+			.text-area-scroll::-webkit-scrollbar-thumb {
+				background: #c41e3a;
+				border-radius: 10px;
+			}
+			.text-area-scroll::-webkit-scrollbar-thumb:hover {
+				background: #e63950;
+			}
+			/* 新元素缓动：渐显 */
+			@keyframes itemFadeIn {
+				from { opacity: 0; transform: translateY(-4px); }
+				to { opacity: 1; transform: translateY(0); }
+			}
+			.passenger-item-enter {
+				animation: itemFadeIn 0.3s ease-out forwards;
+			}
+			.inventory-item-enter {
+				animation: itemFadeIn 0.3s ease-out forwards;
+			}
+			#inventory-list [draggable="true"] {
+				cursor: grab;
+			}
+			.inventory-item-dragging {
+				opacity: 0.5;
+				cursor: grabbing;
+			}
+			.inventory-item-drop-target {
+				box-shadow: 0 0 0 2px #c41e3a;
+			}
+			/* 后备箱插入位占位条：缓动让位 */
+			.inventory-drop-placeholder {
+				flex-shrink: 0;
+				min-height: 0;
+				height: 0;
+				overflow: hidden;
+				transition: height 0.2s ease-out, min-height 0.2s ease-out;
+				border: 2px dashed rgba(196, 30, 58, 0.5);
+				border-radius: 8px;
+				background: rgba(196, 30, 58, 0.08);
+			}
+			.inventory-drop-placeholder.active {
+				min-height: 52px;
+				height: 52px;
+			}
+			.inventory-item-row {
+				transition: margin-top 0.2s ease-out, margin-bottom 0.2s ease-out, transform 0.2s ease-out;
+			}
+			/* 耐久变动时屏幕抖动 */
+			@keyframes screenShake {
+				0%, 100% { transform: translate(0, 0); }
+				15% { transform: translate(-4px, 2px); }
+				30% { transform: translate(4px, -2px); }
+				45% { transform: translate(-3px, -2px); }
+				60% { transform: translate(3px, 2px); }
+				75% { transform: translate(-2px, 1px); }
+			}
+			#game-canvas.screen-shake {
+				animation: screenShake 0.45s ease-out !important;
+			}
+			/* 燃油≤5时：暗红色闪烁 */
+			@keyframes fuelLowFlash {
+				0%, 100% { box-shadow: inset 0 0 80px rgba(80, 0, 0, 0.4); }
+				50% { box-shadow: inset 0 0 120px rgba(120, 0, 0, 0.8); }
+			}
+			#game-canvas.fuel-low-flash {
+				animation: fuelLowFlash 0.7s ease-in-out infinite;
+			}
+			/* 耐久≤50时：故障特效（闪烁 + 色偏 + 轻微位移） */
+			@keyframes durabilityGlitch {
+				0%, 85%, 100% { filter: none; transform: translate(0, 0); }
+				87% { filter: hue-rotate(5deg) contrast(1.1); transform: translate(-4px, 0); }
+				89% { filter: hue-rotate(-8deg) contrast(1.15); transform: translate(3px, 2px); }
+				91% { filter: hue-rotate(3deg); transform: translate(-2px, -1px); }
+				93% { filter: hue-rotate(-4deg); transform: translate(2px, 0); }
+				95% { filter: none; transform: translate(-1px, 0); }
+				97% { filter: hue-rotate(2deg); transform: translate(1px, 0); }
+			}
+			#game-canvas.durability-glitch {
+				animation: durabilityGlitch 2s ease-in-out infinite;
+			}
+			/* 燃油与耐久同时触发时，两个动画并行动画 */
+			#game-canvas.fuel-low-flash.durability-glitch {
+				animation: fuelLowFlash 0.7s ease-in-out infinite, durabilityGlitch 2s ease-in-out infinite;
+			}
+			/* 游戏画面作为容器，供事件弹窗随其尺寸适配 */
+			#game-canvas {
+				container-type: size;
+				container-name: game;
+			}
+			/* 事件选择弹窗：随游戏窗口缩放，不超出遮罩 */
+			#event-modal {
+				overflow: auto;
+				padding: 2%;
+				align-items: flex-start;
+				justify-content: center;
+			}
+			#event-modal .event-modal-inner {
+				width: 96%;
+				max-width: 96%;
+				max-height: 96%;
+				overflow-y: auto;
+				overflow-x: hidden;
+				padding: clamp(6px, 2.5cqw, 32px);
+				border-radius: clamp(6px, 1.5cqw, 16px);
+				box-sizing: border-box;
+			}
+			#event-modal .event-modal-emoji {
+				font-size: clamp(1.25rem, 10cqw, 3.5rem);
+				line-height: 1;
+				margin-bottom: clamp(4px, 1.5cqh, 16px);
+			}
+			#event-modal .event-modal-title {
+				font-size: clamp(0.875rem, 3.5cqw, 1.5rem);
+				margin-bottom: clamp(4px, 1cqh, 8px);
+			}
+			#event-modal .event-modal-desc {
+				font-size: clamp(0.7rem, 2.2cqw, 1rem);
+				line-height: 1.4;
+				margin-bottom: clamp(8px, 2cqh, 24px);
+			}
+			#event-modal .event-modal-choice {
+				padding: clamp(6px, 1.5cqh, 16px) clamp(10px, 2.5cqw, 24px);
+				margin-bottom: clamp(4px, 1cqh, 12px);
+			}
+			#event-modal .event-modal-choice .choice-title {
+				font-size: clamp(0.8rem, 2.8cqw, 1.125rem);
+			}
+			#event-modal .event-modal-choice .choice-desc {
+				font-size: clamp(0.7rem, 2.2cqw, 0.875rem);
+			}
+			/* 二级选择弹窗：随游戏窗口缩放 */
+			#sub-choice-modal {
+				overflow: auto;
+				padding: 2%;
+			}
+			#sub-choice-modal .sub-choice-inner {
+				max-width: 96%;
+				max-height: 96%;
+				padding: clamp(8px, 2.5cqw, 24px);
+				overflow-y: auto;
+				border-radius: clamp(6px, 1.5cqw, 12px);
+				box-sizing: border-box;
+			}
+			#sub-choice-modal .sub-choice-prompt {
+				font-size: clamp(0.75rem, 2.2cqw, 0.875rem);
+				margin-bottom: clamp(8px, 2cqh, 16px);
+			}
+			#sub-choice-modal .sub-choice-option {
+				padding: clamp(6px, 1.5cqh, 12px) clamp(10px, 2.5cqw, 16px);
+				margin-bottom: clamp(4px, 1cqh, 8px);
+				font-size: clamp(0.75rem, 2.2cqw, 0.875rem);
+			}
+			/* 成就解锁提示框动画 */
+			@keyframes achievementSlideIn {
+				from {
+					opacity: 0;
+					transform: translateX(100%);
+				}
+				to {
+					opacity: 1;
+					transform: translateX(0);
+				}
+			}
+			@keyframes achievementSlideOut {
+				from {
+					opacity: 1;
+					transform: translateX(0);
+				}
+				to {
+					opacity: 0;
+					transform: translateX(100%);
+				}
 			}
 		</style>
 	</head>
 	<body class="min-h-screen flex flex-col items-center p-5 text-gray-200 font-chinese">
-		<div
-			class="w-full max-w-[800px] h-[500px] bg-[#0d0d0d] border-[3px] border-[#c41e3a] rounded-xl relative overflow-hidden shadow-[0_0_30px_rgba(196,30,58,0.3)]">
-
-
-			<div class="w-full h-full relative text-xl leading-none">
-				<!-- 公路 - 横向单行，从右向左移动 -->
-				<div id="road" class="absolute w-full h-full flex -bottom-[78%]"></div>
-				
-				<!-- 事件触发字容器 -->
-				<div id="event-trigger-container" class="fixed top-1/2 right-1/4 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-20 opacity-0">
-					<span id="event-trigger-char" class="font-bold"></span>
+		<!-- 主布局：左侧游戏区 + 右侧库存面板 -->
+		<div class="w-full max-w-[1200px] flex gap-4">
+			<!-- 左侧游戏区域 -->
+			<div class="flex-[7] flex flex-col">
+				<!-- 皮卡状态栏 -->
+				<div id="truck-status-bar" class="w-full mb-2 flex gap-2 text-sm">
+					<div class="flex-1 bg-[#0d0d0d] border border-gray-700 rounded-lg px-3 py-1.5 flex items-center gap-2">
+						<span class="text-gray-400">燃油</span>
+						<div class="flex-1 bg-gray-800 rounded-full h-3 overflow-hidden">
+							<div id="fuel-bar" class="h-full bg-yellow-500 rounded-full transition-all duration-500" style="width: 100%"></div>
+						</div>
+						<span id="fuel-text" class="text-yellow-500 text-xs w-12 text-right">100%</span>
+					</div>
+					<div class="flex-1 bg-[#0d0d0d] border border-gray-700 rounded-lg px-3 py-1.5 flex items-center gap-2">
+						<span class="text-gray-400">耐久</span>
+						<div class="flex-1 bg-gray-800 rounded-full h-3 overflow-hidden">
+							<div id="durability-bar" class="h-full bg-green-500 rounded-full transition-all duration-500" style="width: 100%"></div>
+						</div>
+						<span id="durability-text" class="text-green-500 text-xs w-12 text-right">100%</span>
+					</div>
+					<div class="flex-1 bg-[#0d0d0d] border border-gray-700 rounded-lg px-3 py-1.5 flex items-center gap-2">
+						<span class="text-gray-400">舒适</span>
+						<div class="flex-1 bg-gray-800 rounded-full h-3 overflow-hidden">
+							<div id="comfort-bar" class="h-full bg-blue-400 rounded-full transition-all duration-500" style="width: 100%"></div>
+						</div>
+						<span id="comfort-text" class="text-blue-400 text-xs w-12 text-right">100%</span>
+					</div>
 				</div>
 
-				<!-- 红色皮卡 - 默认显示，事件后可由JavaScript动态更新 -->
-				<div id="truck"
-					class="absolute left-1/4 top-2/3 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10">
-					<!-- 第1行: 黑黑黑黑黑黑皮卡皮卡皮黑黑 -->
-					<div class="flex justify-left whitespace-nowrap">
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">皮</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">卡</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">皮</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">卡</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">皮</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
+				<!-- 游戏画面（耐久变动时施加 screen-shake） -->
+				<div id="game-canvas"
+					class="w-full h-[500px] bg-[#0d0d0d] border-[3px] border-[#c41e3a] rounded-xl relative overflow-hidden shadow-[0_0_30px_rgba(196,30,58,0.3)]">
+
+					<div class="w-full h-full relative text-xl leading-none">
+						<!-- 公路 - 横向单行，从右向左移动 -->
+						<div id="road" class="absolute w-full h-full flex -bottom-[78%]"></div>
+
+						<!-- 红色皮卡 - 动态生成 -->
+						<div id="truck"
+							class="absolute left-1/4 top-2/3 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10">
+							<!-- 皮卡内容由initializeTruck()函数动态生成 -->
+						</div>
 					</div>
-					<!-- 第2行: 后车厢后车厢黑黑丨黑黑皮黑 -->
-					<div class="flex justify-left whitespace-nowrap">
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">后</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">车</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">厢</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">后</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">车</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">厢</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">丨</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">皮</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-					</div>
-					<!-- 第3行: 皮卡皮轮卡车门车门车轮门卡 -->
-					<div class="flex justify-left whitespace-nowrap">
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">皮</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">卡</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">皮</span>
-						<span class="text-[#63635E] font-bold text-[22px]">轮</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">卡</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">车</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">门</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">车</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">门</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">车</span>
-						<span class="text-[#63635E] font-bold text-[22px]">轮</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">门</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">卡</span>
-					</div>
-					<!-- 第4行: 皮卡轮轮轮车门车门轮轮轮卡 -->
-					<div class="flex justify-left whitespace-nowrap">
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">皮</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">卡</span>
-						<span class="text-[#63635E] font-bold text-[22px]">轮</span>
-						<span class="text-[#63635E] font-bold text-[22px]">轮</span>
-						<span class="text-[#63635E] font-bold text-[22px]">轮</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">车</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">门</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">车</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">门</span>
-						<span class="text-[#63635E] font-bold text-[22px]">轮</span>
-						<span class="text-[#63635E] font-bold text-[22px]">轮</span>
-						<span class="text-[#63635E] font-bold text-[22px]">轮</span>
-						<span class="text-[#c41e3a] font-bold text-[22px] animate-truck-glow">卡</span>
-					</div>
-					<!-- 第5行: 黑黑黑轮黑黑黑黑黑黑轮黑黑 -->
-					<div class="flex justify-left whitespace-nowrap">
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#63635E] font-bold text-[22px]">轮</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#63635E] font-bold text-[22px]">轮</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
-						<span class="text-[#0d0d0d] font-bold text-[22px]">黑</span>
+					<button onclick="window.location.href='./index.html'"
+						class="absolute top-2.5 left-2.5 px-5 py-2 bg-[#c41e3a]/80 text-white border-none rounded-full cursor-pointer text-sm transition-all duration-300 hover:bg-[#c41e3a]">
+						返回
+					</button>
+				</div>
+
+				<!-- 文本对话区 -->
+				<div id="textArea"
+					class="text-area-scroll w-full max-h-[150px] mt-4 p-5 bg-[rgba(20,20,30,0.8)] border-2 border-gray-800 rounded-xl min-h-[150px] text-base leading-relaxed text-gray-400 overflow-auto">
+					<p>欢迎来到红色皮卡的安保之旅！</p>
+					<p>至于你问为什么是红色皮卡？为什么是安保？</p>
+					<p>小编也不知道呢！</p>
+				</div>
+
+				<!-- 车上成员（游戏画面下方，横向排列） -->
+				<div class="w-full mt-3 bg-[#0d0d0d] border border-gray-700 rounded-xl p-3">
+					<h2 class="text-sm font-bold text-[#c41e3a] mb-2 flex items-center gap-2">
+						车上成员
+					</h2>
+					<div id="passenger-list" class="min-h-[44px] flex flex-row flex-wrap gap-2 items-center text-sm">
+						<div class="text-gray-600 text-sm">暂无乘客</div>
 					</div>
 				</div>
 			</div>
-			<button onclick="window.location.href='./index.html'"
-				class="absolute top-2.5 left-2.5 px-5 py-2 bg-[#c41e3a]/80 text-white border-none rounded-full cursor-pointer text-sm transition-all duration-300 hover:bg-[#c41e3a]">
-				返回
-			</button>
 
-		</div>
+			<!-- 右侧库存面板 -->
+			<div class="flex-[3] flex flex-col gap-2">
+				<!-- 金币显示 -->
+				<div class="bg-[#0d0d0d] border border-gray-700 rounded-lg px-3 py-1.5 flex items-center justify-between">
+					<span class="text-gray-400 text-sm flex items-center gap-1">金币</span>
+					<span id="gold-text" class="text-yellow-400 font-bold text-lg">0</span>
+				</div>
 
-		<div id="textArea"
-			class="w-full max-w-[800px] max-h-[150px] mt-5 p-5 bg-[rgba(20,20,30,0.8)] border-2 border-gray-800 rounded-xl min-h-[150px] text-base leading-relaxed text-gray-400 overflow-auto">
-			<p>欢迎来到红色皮卡的安保之旅！</p>
-			<p>至于你问为什么是红色皮卡？为什么是安保？</p>
-			<p>小编也不知道呢！</p>
+				<!-- 行驶里程记录表 -->
+				<div class="bg-[#0d0d0d] border-[2px] border-[#c41e3a]/60 rounded-xl p-4 shadow-[0_0_15px_rgba(196,30,58,0.15)]">
+					<h2 class="text-base font-bold text-[#c41e3a] mb-3 flex items-center gap-2">
+						里程记录
+					</h2>
+					<div class="space-y-2 text-sm">
+						<div class="flex justify-between items-center text-gray-300">
+							<span class="text-gray-400">本次里程</span>
+							<span id="mileage-current" class="font-bold text-[#c41e3a]">0</span>
+							<span class="text-gray-500">km</span>
+						</div>
+						<div class="flex justify-between items-center text-gray-300">
+							<span class="text-gray-400">历史最高</span>
+							<span id="mileage-best" class="font-bold text-amber-400">0</span>
+							<span class="text-gray-500">km</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- 后备箱 -->
+				<div class="bg-[#0d0d0d] border-[3px] border-[#c41e3a] rounded-xl p-4 shadow-[0_0_20px_rgba(196,30,58,0.2)] flex-1 flex flex-col">
+					<h2 class="text-lg font-bold text-[#c41e3a] mb-2 flex items-center gap-2">
+						后备箱
+					</h2>
+					<div class="flex items-center gap-2 text-sm text-gray-400 mb-3">
+						<span>载重：</span>
+						<div class="flex-1 bg-gray-800 rounded-full h-2.5 overflow-hidden">
+							<div id="weight-bar" class="h-full bg-[#c41e3a] rounded-full transition-all duration-500" style="width: 0%"></div>
+						</div>
+						<span id="weight-text" class="text-xs text-gray-500">0/50</span>
+					</div>
+
+					<!-- 物品列表（容器也参与拖放，便于在占位条/空白处松手仍可放下） -->
+					<div id="inventory-list" class="text-area-scroll space-y-1 flex-1 overflow-y-auto pr-1" ondragover="inventoryDragOver(event)" ondrop="inventoryDrop(event)">
+						<div class="text-center text-gray-600 text-sm py-8">后备箱空空如也...</div>
+					</div>
+				</div>
+			</div>
 		</div>
+		<!-- 游戏配置文件 -->
+		<script src="js/game_config/game-config.js"></script>
+		<script src="js/game_config/passenger-config.js"></script>
+		<script src="js/game_config/passenger-dialogue-config.js"></script>
+		<script src="js/game_config/conditional-stories-config.js"></script>
+		<script src="js/game_config/truck-style-config.js"></script>
+		<script src="js/game_config/items-config.js"></script>
+		<script src="js/game_config/merchant-config.js"></script>
+		<!-- 结局配置 -->
+		<script src="js/game_config/endings/endings-config.js"></script>
+		<!-- 成就配置 -->
+		<script src="js/game_config/achievements-config.js"></script>
 		<!-- 事件数据 -->
-		<script src="js/events_data.js"></script>
-		<!-- 道路运行脚本 -->
-		<script src="js/road.js"></script>
-		<!-- 文本框内容脚本 -->
+		<script src="js/game_config/events/events-encounter.js"></script>
+		<script src="js/game_config/events/events-stop.js"></script>
+		<script src="js/game_config/events/events-merchant.js"></script>
+		<script src="js/game_config/events/events-special.js"></script>
+		<script src="js/game_config/events/events-index.js"></script>
+		<script src="js/game_config/events/inventory-events.js"></script>
+		<!-- 游戏系统模块 -->
+		<script src="js/game_system/game-state.js"></script>
+		<script src="js/game_system/save-system.js"></script>
+		<script src="js/game_system/text-control.js"></script>
+		<script src="js/game_system/inventory-system.js"></script>
+		<script src="js/game_system/achievement-system.js"></script>
+		<!-- 游戏显示/演出模块 -->
+		<script src="js/game_show/truck-display.js"></script>
+		<script src="js/game_show/event-animation.js"></script>
+		<script src="js/game_show/inventory-display.js"></script>
+		<script src="js/game_show/audio.js"></script>
+		<script src="js/game_show/road.js"></script>
+		<!-- 游戏玩法模块 -->
+		<script src="js/gameplay/event-handler.js"></script>
+		<script src="js/gameplay/game-over.js"></script>
+		<script src="js/gameplay/text-generation.js"></script>
+		<!-- 主控制脚本 -->
 		<script src="js/text.js"></script>
 	</body>
 </html>
