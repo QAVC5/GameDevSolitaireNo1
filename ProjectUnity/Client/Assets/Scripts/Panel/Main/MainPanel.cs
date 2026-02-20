@@ -39,7 +39,7 @@ public class MainPanel : PanelBase
 	}
 	public void SetDay(int day)
 	{
-		lbl_day.text = $"µÚ{day}Ìì";
+		lbl_day.text = $"ï¿½ï¿½{day}ï¿½ï¿½";
 		SetTimeSlice(0, 23, Color.white);
 		if ((day + 1) % 3 == 0) cangomatch = true;
 		else cangomatch = false;
@@ -51,7 +51,7 @@ public class MainPanel : PanelBase
 	}
 	public void OnRelaxClick()
 	{
-		AudioManager.Inst.Play("BGM/ÏûÄ¥Ê±¼ä");
+		AudioManager.Inst.Play("BGM/ï¿½ï¿½Ä¥Ê±ï¿½ï¿½");
 		GameManager gm = CBus.Instance.GetManager(ManagerName.GameManager) as GameManager;
 		gm.CostTime(1);
 	}
@@ -63,8 +63,14 @@ public class MainPanel : PanelBase
 	public void OnMapClick()
 	{
 		UIManager uiManager = CBus.Instance.GetManager(ManagerName.UIManager) as UIManager;
-		MapPanel map = uiManager.OpenPanel("MapPanel") as MapPanel;
-		AudioManager.Inst.Play("BGM/µã»÷°´Å¥");
+		MapPanel map = uiManager.GetPanel("MapPanel") as MapPanel;
+		if (map.isOpen)
+		{
+			map.Close();
+			return;
+		}
+		map = uiManager.OpenPanel("MapPanel") as MapPanel;
+		AudioManager.Inst.Play("BGM/ï¿½ï¿½ï¿½ï¿½ï¿½Å¥");
 		map.InitMap();
 	}
 	public void Hoe()
@@ -72,7 +78,7 @@ public class MainPanel : PanelBase
 		GameManager ggm = CBus.Instance.GetManager(ManagerName.GameManager) as GameManager;
 		if (ggm.CheckTime(1) == false)
 		{
-			TipManager.Tip("Ê±¼ä²»×ã1Ð¡Ê±");
+			TipManager.Tip("Ê±ï¿½ä²»ï¿½ï¿½1Ð¡Ê±");
 			return;
 		}
 		GroundManager gm = CBus.Instance.GetManager(ManagerName.GroundManager) as GroundManager;
@@ -85,7 +91,7 @@ public class MainPanel : PanelBase
 		GameManager ggm = CBus.Instance.GetManager(ManagerName.GameManager) as GameManager;
 		if (ggm.CheckTime(1) == false)
 		{
-			TipManager.Tip("Ê±¼ä²»×ã1Ð¡Ê±");
+			TipManager.Tip("Ê±ï¿½ä²»ï¿½ï¿½1Ð¡Ê±");
 			return;
 		}
 		GroundManager gm = CBus.Instance.GetManager(ManagerName.GroundManager) as GroundManager;
@@ -97,17 +103,17 @@ public class MainPanel : PanelBase
 		GameManager ggm = CBus.Instance.GetManager(ManagerName.GameManager) as GameManager;
 		if (ggm.CheckTime(1) == false)
 		{
-			TipManager.Tip("Ê±¼ä²»×ã1Ð¡Ê±");
+			TipManager.Tip("Ê±ï¿½ä²»ï¿½ï¿½1Ð¡Ê±");
 			return;
 		}
 		GroundManager gm = CBus.Instance.GetManager(ManagerName.GroundManager) as GroundManager;
-		//´Ë´¦Ó¦¸Ã´ò¿ª×ÓÃæ°å£¬Ñ¡ÔñÒ»¸öÐèÒªÖÖÖ²µÄ¶«Î÷
+		//ï¿½Ë´ï¿½Ó¦ï¿½Ã´ï¿½ï¿½ï¿½ï¿½ï¿½å£¬Ñ¡ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½Ö²ï¿½Ä¶ï¿½ï¿½ï¿½
 		int num = gm.Plant(1, 1100002);
 		ggm.CostTime(num);
 	}
 	public void Feed() {
 		AssetManager am = CBus.Instance.GetManager(ManagerName.AssetManager) as AssetManager;
-		if (am.CheckAsset(1100003, 1) == false) { TipManager.Tip("ÄÁ²Ý²»×ã1"); return; }
+		if (am.CheckAsset(1100003, 1) == false) { TipManager.Tip("ï¿½ï¿½ï¿½Ý²ï¿½ï¿½ï¿½1"); return; }
 		am.Add(1100003, -1);
 		LevelManager levelManager = CBus.Instance.GetManager(ManagerName.LevelManager) as LevelManager;
 		levelManager.AddExp(20);
@@ -125,14 +131,14 @@ public class MainPanel : PanelBase
 
 
 
-            TipManager.Tip($"ÈüÂí³¡ÏÂ´Î¿ª·ÅÊ±¼ä:µÚ{((((gm.day+1) / 3 + 1) * 3)-1)}Ìì,ÖÐÎçÖ®Ç°");
+            TipManager.Tip($"ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â´Î¿ï¿½ï¿½ï¿½Ê±ï¿½ï¿½:ï¿½ï¿½{((((gm.day+1) / 3 + 1) * 3)-1)}ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½Ö®Ç°");
             return;
 		}
 
         if (gm.time < 12)
         {
 			Debug.Log(gm.time);
-            TipManager.Tip("ÈüÂíÖ»ÄÜÔÚÖÐÎçÒÔÇ°²Î¼Ó£¡");
+            TipManager.Tip("ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½Î¼Ó£ï¿½");
             return;
         }
 
@@ -147,7 +153,7 @@ public class MainPanel : PanelBase
 	}
 	public void RefreshBeg()
 	{
-		AudioManager.Inst.Play("BGM/Ê§È¥µÀ¾ß");
+		AudioManager.Inst.Play("BGM/Ê§È¥ï¿½ï¿½ï¿½ï¿½");
 		GameManager gm = CBus.Instance.GetManager(ManagerName.GameManager) as GameManager;
 		AssetFactory af = CBus.Instance.GetFactory(FactoryName.AssetFactory) as AssetFactory;
 		foreach (var item in begItem)

@@ -74,7 +74,7 @@ public class MapPanel : PanelBase
 		}
 		if (trans_content.childCount == 0)
 		{
-			TipManager.Tip("ÔÝÊ±Ã»ÓÐ¿ÉÒÆ¶¯µÄµØµã£¡");
+			TipManager.Tip("ï¿½ï¿½Ê±Ã»ï¿½Ð¿ï¿½ï¿½Æ¶ï¿½ï¿½ÄµØµã£¡");
 			Close();
 		}
 
@@ -86,9 +86,15 @@ public class MapPanel : PanelBase
 	}
 	public override void Close()
 	{
-		AudioManager.Inst.Play("BGM/µã»÷°´Å¥");
+		isOpen = false;
+		AudioManager.Inst.Play("BGM/ï¿½ï¿½ï¿½ï¿½ï¿½Å¥");
 		gameObject.SetActive(false);
 		base.Close();
+		UIManager uiManager = CBus.Instance.GetManager(ManagerName.UIManager) as UIManager;
+		if (uiManager != null)
+		{
+			uiManager.OpenPanelIgnoreToggle("GroundPanel");
+		}
 	}
 
 

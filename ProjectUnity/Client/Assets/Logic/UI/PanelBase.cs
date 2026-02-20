@@ -27,4 +27,8 @@ public class PanelBase : MonoBehaviour
 		}
 	}
 
+	public void Start()
+	{
+		transform.localScale = Vector3.one;
+	}
 }
